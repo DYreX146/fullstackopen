@@ -35,10 +35,12 @@ const ContactList = ({ contacts, deletePerson }) => (
   </div>
 )
 
-const Notification = ({ message, isError }) => {
-  if (message === null) {
+const Notification = ({ notificationMessage }) => {
+  if (notificationMessage === null) {
     return null
   }
+
+  const { message, isError } = notificationMessage
 
   const color = isError ? 'red' : 'green'
 
@@ -65,7 +67,6 @@ const App = () => {
   const [newNumber, setNewNumber] = useState('')
   const [filter, setFilter] = useState('')
   const [notificationMessage, setNotificationMessage] = useState(null)
-  const [isErrorMessage, setIsErrorMessage] = useState(false)
 
   useEffect(() => {
     personService
@@ -86,16 +87,19 @@ const App = () => {
             setPersons(persons.map(person => person.id === updatedPerson.id ? updatedPerson : person))
             setNewName('')
             setNewNumber('')
-            setNotificationMessage(`Number for ${updatedPerson.name} updated to ${updatedPerson.number}`)
+            setNotificationMessage({
+              message: `Number for ${updatedPerson.name} updated to ${updatedPerson.number}`,
+              isError: false
+            })
             setTimeout(() => setNotificationMessage(null), 5000)
           })
           .catch(error => {
-            setPersons(persons.filter(person => person.id !== existingPerson.id))
-            setNotificationMessage(`Information of ${existingPerson.name} has already been removed from server`)
-            setIsErrorMessage(true)
+            setNotificationMessage({
+              message: error.response.data.error,
+              isError: true
+            })
             setTimeout(() => {
               setNotificationMessage(null)
-              setIsErrorMessage(false)
             }, 5000)
           })
       }
@@ -106,7 +110,17 @@ const App = () => {
           setPersons(persons.concat(newPerson))
           setNewName('')
           setNewNumber('')
-          setNotificationMessage(`Added ${newPerson.name}`)
+          setNotificationMessage({
+            message: `Added ${newPerson.name}`,
+            isError: false
+          })
+          setTimeout(() => setNotificationMessage(null), 5000)
+        })
+        .catch(error => {
+          setNotificationMessage({
+            message: error.response.data.error,
+            isError: true
+          })
           setTimeout(() => setNotificationMessage(null), 5000)
         })
     }
@@ -120,7 +134,10 @@ const App = () => {
         .remove(id)
         .then(() => {
           setPersons(persons.filter(person => person.id !== id))
-          setNotificationMessage(`Deleted ${person.name}`)
+          setNotificationMessage({
+            message: `Deleted ${person.name}`,
+            isError: false
+          })
           setTimeout(() => setNotificationMessage(null), 5000)
         })
     }
@@ -132,7 +149,7 @@ const App = () => {
     <div>
       <h2>Phonebook</h2>
 
-      <Notification message={notificationMessage} isError={isErrorMessage} />
+      <Notification notificationMessage={notificationMessage} />
       
       <ContactFilter filter={filter} onChange={event => setFilter(event.target.value)} />
 
