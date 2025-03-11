@@ -55,7 +55,7 @@ blogsRouter.delete('/:id', middleware.userExtractor, async (request, response, n
     }
 
     await Blog.findByIdAndDelete(request.params.id)
-    user.blogs = user.blogs.filter(blog => blog.id.toString() !== request.params.id)
+    user.blogs = user.blogs.filter(blogId => blogId.toString() !== request.params.id)
     await user.save()
 
     response.status(204).end()
@@ -64,19 +64,34 @@ blogsRouter.delete('/:id', middleware.userExtractor, async (request, response, n
   }
 })
 
-blogsRouter.put('/:id', async (request, response, next) => {
+blogsRouter.put('/:id', middleware.userExtractor, async (request, response, next) => {
   try {
+    const body = request.body
+    const user = request.user
+    const blog = await Blog.findById(request.params.id)
+
+    if (!blog) {
+      return response.status(400).json({ error: 'invalid id' })
+    }
+
+    if (blog.user.toString() !== user.id.toString()) {
+      return response.status(401).json({ error: 'unauthorized' })
+    }
+
+    const blogToUpdate = {
+      title: body.title,
+      author: body.author,
+      url: body.url,
+      likes: body.likes
+    }
+
     const updatedBlog = await Blog.findByIdAndUpdate(
       request.params.id,
-      request.body,
+      blogToUpdate,
       { new: true, runValidators: true, context: 'query' }
     )
-
-    if (updatedBlog) {
-      response.json(updatedBlog)
-    } else {
-      response.status(400).send({ error: 'malformatted id' })
-    }
+    
+    response.json(updatedBlog)
   } catch (error) {
     next(error)
   }
