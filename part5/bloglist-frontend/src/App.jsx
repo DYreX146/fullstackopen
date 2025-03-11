@@ -67,7 +67,7 @@ const App = () => {
 
     try {
       const createdBlog = await blogService.create(newBlog)
-	  createdBlog.user = user
+      createdBlog.user = user
 
       setBlogs(blogs.concat(createdBlog))
       setNotificationMessage({
