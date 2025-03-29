@@ -1,136 +1,99 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useContext } from "react";
+import { Routes, Route, Link } from "react-router-dom";
 
-import Blog from './components/Blog'
-import Notification from './components/Notification'
-import LoginForm from './components/LoginForm'
-import BlogForm from './components/BlogForm'
-import Toggleable from './components/Toggleable'
+import Notification from "./components/Notification";
+import LoginForm from "./components/LoginForm";
+import BlogList from "./components/BlogList";
+import UserList from "./components/UserList";
+import User from "./components/User";
+import Blog from "./components/Blog";
 
-import blogService from './services/blogs'
-import loginService from './services/login'
+import { useSetNotification } from "./providers/NotificationContext";
+import UserContext from "./providers/UserContext";
+
+import blogService from "./services/blogs";
+import loginService from "./services/login";
 
 const App = () => {
-  const [blogs, setBlogs] = useState([])
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [user, setUser] = useState(null)
-  const [notificationMessage, setNotificationMessage] = useState(null)
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [user, userDispatch] = useContext(UserContext);
+  const setNotification = useSetNotification();
 
   useEffect(() => {
-    blogService.getAll().then(blogs => {
-      setBlogs(blogs)
-    })
-  }, [])
-
-  useEffect(() => {
-    const loggedUserJSON = window.localStorage.getItem('userLogin')
+    const loggedUserJSON = window.localStorage.getItem("userLogin");
     if (loggedUserJSON) {
-      const user = JSON.parse(loggedUserJSON)
-      setUser(user)
-      blogService.setToken(user.token)
+      const user = JSON.parse(loggedUserJSON);
+      userDispatch({ type: "SET", payload: user });
+      blogService.setToken(user.token);
     }
-  }, [])
+  }, [userDispatch]);
 
-  const blogFormRef = useRef()
-
-  const handleLogin = async event => {
-    event.preventDefault()
+  const handleLogin = async (event) => {
+    event.preventDefault();
 
     try {
       const user = await loginService.login({
-        username, password,
-      })
+        username,
+        password,
+      });
 
-      window.localStorage.setItem(
-        'userLogin', JSON.stringify(user)
-      )
-      blogService.setToken(user.token)
-      setUser(user)
-      setUsername('')
-      setPassword('')
+      window.localStorage.setItem("userLogin", JSON.stringify(user));
+      blogService.setToken(user.token);
+      userDispatch({ type: "SET", payload: user });
+      setUsername("");
+      setPassword("");
     } catch (error) {
-      setNotificationMessage({
-        message: 'Wrong username or password',
-        isError: true
-      })
-      setTimeout(() => setNotificationMessage(null), 5000)
+      setNotification({
+        message: "Wrong username or password",
+        isError: true,
+      });
     }
-  }
+  };
 
   const handleLogout = () => {
-    window.localStorage.removeItem('userLogin')
-    setUser(null)
-  }
-
-  const createBlog = async newBlog => {
-    blogFormRef.current.toggleVisibility()
-
-    try {
-      const createdBlog = await blogService.create(newBlog)
-      createdBlog.user = user
-
-      setBlogs(blogs.concat(createdBlog))
-      setNotificationMessage({
-        message: `Added ${createdBlog.title} by ${createdBlog.author}`,
-        isError: false
-      })
-      setTimeout(() => setNotificationMessage(null), 5000)
-    } catch (error) {
-      setNotificationMessage({
-        message: error.response.data.error,
-        isError: true
-      })
-      setTimeout(() => setNotificationMessage(null), 5000)
-    }
-  }
-
-  const updateBlog = async newBlog => {
-    try {
-      await blogService.update(newBlog.id, newBlog)
-
-      setBlogs(blogs.map(blog => blog.id === newBlog.id ? newBlog : blog))
-      setNotificationMessage({
-        message: `Updated ${newBlog.title} by ${newBlog.author}`,
-        isError: false
-      })
-      setTimeout(() => setNotificationMessage(null), 5000)
-    } catch (error) {
-      setNotificationMessage({
-        message: error.response.data.error,
-        isError: true
-      })
-      setTimeout(() => setNotificationMessage(null), 5000)
-    }
-  }
-
-  const deleteBlog = async blog => {
-    if (confirm(`Are you sure you want to delete ${blog.title} by ${blog.author}?`)) {
-      try {
-        await blogService.remove(blog.id)
-
-        setBlogs(blogs.filter(b => b.id !== blog.id))
-        setNotificationMessage({
-          message: `Deleted ${blog.title} by ${blog.author}`,
-          isError: false
-        })
-        setTimeout(() => setNotificationMessage(null), 5000)
-      } catch (error) {
-        setNotificationMessage({
-          message: error.response.data.error,
-          isError: true
-        })
-        setTimeout(() => setNotificationMessage(null), 5000)
-      }
-    }
-  }
+    window.localStorage.removeItem("userLogin");
+    userDispatch({ type: "REMOVE" });
+  };
 
   return (
-    <div>
-      <h2>blogs</h2>
+    <div className="container py-5">
+      <nav className="navbar navbar-expand-lg bg-body-tertiary">
+        <div className="container-fluid">
+          <Link to="/" className="navbar-brand">
+            Blog List
+          </Link>
+          {user && (
+            <div className="collapse navbar-collapse">
+              <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+                <li className="nav-item">
+                  <Link to="/" className="nav-link">
+                    Blogs
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link to="/users" className="nav-link">
+                    Users
+                  </Link>
+                </li>
+              </ul>
+              <ul className="navbar-nav mb-2 mb-lg-0">
+                <li className="nav-item mx-2">{user.name}</li>
+                <li className="nav-item mx-2">
+                  <Link to="/" className="link-danger" onClick={handleLogout}>
+                    Logout
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          )}
+        </div>
+      </nav>
 
-      <Notification notificationMessage={notificationMessage} />
+      <Notification />
 
-      {user === null ?
+      {user === null ? (
         <LoginForm
           handleLogin={handleLogin}
           username={username}
@@ -138,24 +101,18 @@ const App = () => {
           password={password}
           setPassword={setPassword}
         />
-        :
+      ) : (
         <div>
-          <p>
-            {user.name} logged in
-            <button onClick={handleLogout}>logout</button>
-          </p>
-
-          <Toggleable buttonLabel='create new blog' ref={blogFormRef}>
-            <BlogForm createBlog={createBlog}/>
-          </Toggleable>
-
-          {blogs.toSorted((blog1, blog2) => blog2.likes - blog1.likes).map(blog =>
-            <Blog key={blog.id} blog={blog} user={user} updateBlog={updateBlog} deleteBlog={deleteBlog} />
-          )}
+          <Routes>
+            <Route path="/blogs/:id" element={<Blog />} />
+            <Route path="/" element={<BlogList />} />
+            <Route path="/users/:id" element={<User />} />
+            <Route path="/users" element={<UserList />} />
+          </Routes>
         </div>
-      }
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default App
+export default App;

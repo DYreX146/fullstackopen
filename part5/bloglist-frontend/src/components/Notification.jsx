@@ -1,26 +1,20 @@
-const Notification = ({ notificationMessage }) => {
-  if (notificationMessage === null) {
-    return null
+import { useNotificationValue } from "../providers/NotificationContext";
+
+const Notification = () => {
+  const notification = useNotificationValue();
+
+  if (notification === null) {
+    return null;
   }
 
-  const { message, isError } = notificationMessage
-  const color = isError ? 'red' : 'green'
-
-  const notificationStyle = {
-    color: color,
-    background: 'lightgrey',
-    fontSize: 20,
-    borderStyle: 'solid',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10
-  }
+  const { message, isError } = notification;
+  const alertType = isError ? "alert-danger" : "alert-success";
 
   return (
-    <div style={notificationStyle} className="notification">
+    <div className={`alert ${alertType} mt-3`} role="alert">
       {message}
     </div>
-  )
-}
+  );
+};
 
-export default Notification
+export default Notification;

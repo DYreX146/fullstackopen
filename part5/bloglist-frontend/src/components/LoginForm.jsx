@@ -1,40 +1,50 @@
-import PropTypes from 'prop-types'
+import PropTypes from "prop-types";
 
-const LoginForm = ({ handleLogin, username, setUsername, password, setPassword }) => (
-  <div>
-    <h2>log in to application</h2>
+const LoginForm = ({
+  handleLogin,
+  username,
+  setUsername,
+  password,
+  setPassword,
+}) => (
+  <div className="container text-center">
+    <h1 className="display-2 py-5">Log In</h1>
     <form onSubmit={handleLogin}>
-      <div>
-        username
+      <div className="mb-3">
         <input
-          data-testid='username'
+          className="form-control"
+          data-testid="username"
+          placeholder="Username"
           type="text"
           value={username}
-          name="Username"
+          name="username"
           onChange={({ target }) => setUsername(target.value)}
         />
       </div>
-      <div>
-        password
+      <div className="mb-3">
         <input
-          data-testid='password'
+          className="form-control"
+          data-testid="password"
+          placeholder="Password"
           type="password"
           value={password}
-          name="Password"
+          name="password"
           onChange={({ target }) => setPassword(target.value)}
         />
       </div>
-      <button type="submit">login</button>
+      <button className="btn btn-success" type="submit">
+        Login
+      </button>
     </form>
   </div>
-)
+);
 
 LoginForm.propTypes = {
   handleLogin: PropTypes.func.isRequired,
   setUsername: PropTypes.func.isRequired,
   setPassword: PropTypes.func.isRequired,
   username: PropTypes.string.isRequired,
-  password: PropTypes.string.isRequired
-}
+  password: PropTypes.string.isRequired,
+};
 
-export default LoginForm
+export default LoginForm;
